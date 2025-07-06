@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky Pricing</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            /* Apply hero gradient from index.html as base for the glassy effect */
+            background: linear-gradient(135deg, #e0f2fe, #bfdbfe, #93c5fd);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 6rem; /* Adjusted padding-top to account for fixed navbar */
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-bottom: 2rem;
+        }
+        .container {
+            max-width: 1200px; /* Wider container */
+            width: 100%;
+            padding: 0 1rem;
+        }
+        .card {
+            /* Apply glassmorphism effect */
+            background-color: rgba(255, 255, 255, 0.9); /* More opaque white for better text readability */
+            backdrop-filter: blur(10px) saturate(180%); /* Blur and saturate for glass effect */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border */
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); /* Stronger, softer shadow */
+            @apply p-8 rounded-xl transition-shadow duration-300 flex flex-col; /* Changed rounded-full back to rounded-xl, removed justify-between */
+            min-height: 300px; /* Ensure cards have a consistent height */
+            width: 100%; /* Allow cards to take full width of grid column */
+            max-width: none; /* Remove max-width to allow flexible sizing */
+            text-align: left; /* Align text to left as in screenshot */
+        }
+        .card.dark {
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card.dark .text-gray-600 {
+            color: #e0e0e0; /* Lighter text for dark card */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* CSS for hiding and showing the navbar */
+        .navbar-hidden {
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .navbar-visible {
+            transform: translateY(0);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Navbar glassmorphism */
+        #main-navbar {
+            background-color: transparent; /* Fully transparent */
+            backdrop-filter: none; /* Remove blur */
+            box-shadow: none; /* Remove shadow */
+        }
+
+        /* Dialog specific styling */
+        dialog {
+            border: none;
+            padding: 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque for dialog */
+            backdrop-filter: blur(15px) saturate(180%); /* Stronger blur for dialog */
+            position: fixed; /* Ensure it stays in place */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; /* Above other content */
+        }
+
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        dialog button {
+            @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+        }
+        dialog .close-btn {
+            @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
+        }
+        dialog .whatsapp-btn {
+            @apply bg-green-500 text-white hover:bg-green-600;
+        }
+
+        /* Custom button styling for a more prominent look, copied from index.html */
+        .btn-primary {
+            @apply bg-black text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center space-x-2;
+            width: auto;
+            height: auto;
+            border: none;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Add transition for hover */
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px); /* Slightly lift button on hover */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Larger shadow on hover */
+        }
+
+        /* New subscribe button style */
+        .btn-subscribe {
+            /* Changed background to black and hover to gray-800 */
+            @apply bg-black text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-gray-800 transition-colors duration-200 w-full;
+        }
+
+        /* Checkmark icon for features */
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: #4a5568; /* Tailwind gray-700 */
+        }
+        .feature-item svg {
+            flex-shrink: 0; /* Prevent icon from shrinking */
+            margin-right: 0.5rem;
+            color: #10B981; /* Tailwind green-500 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav id="main-navbar" class="bg-transparent p-4 shadow-none fixed top-0 left-0 right-0 z-50 navbar-visible">
+        <div class="container mx-auto flex justify-between items-center px-4 md:px-0">
+            <!-- Left section: Logo -->
+            <div class="flex items-center">
+                <a href="index.html" class="text-gray-900 font-bold text-lg flex items-center">
+                    <!-- Sky Logo: Using a placeholder for now, replace with icon.png if available -->
+                    <img src="icon.png" alt="Sky Logo" class="h-8 w-8 mr-2 rounded-full">
+                    Sky
+                </a>
+            </div>
+
+            <!-- Center section: Navigation Links -->
+            <div class="hidden md:flex space-x-10 text-gray-600 font-medium flex-grow justify-center">
+                <a href="index.html#how-it-works-section" class="hover:text-gray-900 transition-colors duration-200 nav-link">How it works</a>
+                <a href="index.html#use-cases-section" class="hover:text-gray-900 transition-colors duration-200 nav-link">Use cases</a>
+                <a href="pricing.html" class="hover:text-gray-900 transition-colors duration-200">Pricing</a>
+            </div>
+
+            <!-- Right section: Auth Buttons -->
+            <div class="flex items-center space-x-4">
+                <a href="https://bytarch.netlify.app/login" class="text-gray-600 hover:text-gray-900 font-medium hidden md:block">Log in</a>
+                <a href="http://bytarch.netlify.app/login" class="bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-1">
+                    <span>Sign up</span>
+                    <!-- Arrow icon -->
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto text-center py-12 mt-16"> <!-- Added mt-16 to push content below navbar -->
+        <h1 class="text-6xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-4">Unlock Sky's Full Potential.</h1>
+        <p class="text-xl text-gray-700 max-w-2xl mx-auto mb-12">
+            Experience real-time AI assistance for comprehensive screen and audio analysis with Sky.
+        </p>
+
+        <div id="pricing-container" class="grid gap-8 justify-items-center">
+            <!-- Pricing cards will be loaded here by JavaScript -->
+            <div class="col-span-full flex justify-center items-center h-48">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+
+        <div id="error-message" class="hidden text-red-600 mt-8 text-lg">
+            Failed to load pricing information. Please try again later.
+        </div>
+    </div>
+
+    <!-- WhatsApp Dialog -->
+    <dialog id="whatsapp-dialog" class="rounded-xl p-8">
+        <h3 class="text-2xl font-bold mb-4">Contact Us for Sky Plan</h3>
+        <p class="text-gray-700 mb-4">Please provide your name and any relevant details below to proceed with your purchase. We will contact you via WhatsApp.</p>
+        <div class="mb-6">
+            <label for="user-details" class="block text-gray-700 text-sm font-bold mb-2 text-left">Your Details:</label>
+            <textarea id="user-details" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-24" placeholder="Your Name, Email, or any specific questions..."></textarea>
+        </div>
+        <div class="flex justify-end space-x-4">
+            <button id="close-dialog-btn" class="close-btn">Cancel</button>
+            <a id="whatsapp-link-btn" href="#" target="_blank" class="whatsapp-btn flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.04 2C7.03 2 3 6.03 3 11.04c0 1.78.5 3.47 1.45 4.98L3.04 21l5.1-1.35c1.47.8 3.16 1.25 4.9 1.25 5.01 0 9.04-4.03 9.04-9.04S17.05 2 12.04 2zm3.83 14.48c-.2-.09-.97-.48-1.12-.53-.15-.05-.26-.07-.37.07-.11.15-.42.53-.52.64-.1.1-.21.1-.4.05-.7-.27-1.44-.53-2.06-.95-1.07-.7-1.79-1.59-2.01-1.95-.22-.36-.02-.55.08-.67.09-.1.2-.26.3-.39.1-.12.13-.2.2-.34.07-.15.03-.27-.01-.38-.04-.11-.37-.89-.51-1.22-.14-.32-.28-.27-.37-.27-.08 0-.17-.01-.26-.01-.19 0-.5.07-.76.32-.26.25-1 .97-1 2.36s1.02 2.74 1.16 2.94c.14.2 2 3.06 4.83 4.24 2.83 1.18 2.83.79 3.33.74.5-.05 1.12-.46 1.28-.83.16-.37.16-.68.11-.77-.05-.09-.19-.14-.4-.23z"/>
+                </svg>
+                <span>Continue to WhatsApp</span>
+            </a>
+        </div>
+    </dialog>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pricingContainer = document.getElementById('pricing-container');
+            const errorMessage = document.getElementById('error-message');
+            const loadingSpinner = pricingContainer.querySelector('.loading-spinner');
+            const whatsappDialog = document.getElementById('whatsapp-dialog');
+            const closeDialogBtn = document.getElementById('close-dialog-btn');
+            const whatsappLinkBtn = document.getElementById('whatsapp-link-btn');
+            const userDetailsInput = document.getElementById('user-details');
+
+            try {
+                // Fetch pricing data
+                const response = await fetch('https://bytarch.sytes.net/cdn/ads/pricing.json?t=' + new Date().getTime()); // Add timestamp to prevent caching
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const pricingData = await response.json();
+
+                // Clear loading spinner
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+                
+                // Ensure pricingData is an array, even if it's a single object for now
+                const products = Array.isArray(pricingData) ? pricingData : [pricingData];
+
+                if (products.length === 0) {
+                    pricingContainer.innerHTML = '<p class="text-gray-700 text-lg">No pricing plans available at the moment. Please check back later!</p>';
+                    return;
+                }
+
+                // Filter for "Sky" related products (assuming "Sky" is in the name or description)
+                const skyProducts = products.filter(product => 
+                    (product.name && product.name.toLowerCase().includes('sky')) || 
+                    (product.description && product.description.toLowerCase().includes('sky'))
+                );
+
+                if (skyProducts.length === 0) {
+                    pricingContainer.innerHTML = '<p class="text-gray-700 text-lg">No Sky pricing plans found at the moment. Please check back later!</p>';
+                    return;
+                }
+
+                // Dynamically adjust grid columns based on the number of products
+                let gridClasses = 'grid gap-8 justify-items-center';
+                // Always start with grid-cols-1 for mobile, then adjust for larger screens
+                gridClasses += ' grid-cols-1'; 
+                if (skyProducts.length === 2) {
+                    gridClasses += ' md:grid-cols-2'; // 2 columns on medium screens
+                } else if (skyProducts.length >= 3) { 
+                    gridClasses += ' md:grid-cols-2 lg:grid-cols-3'; // 2 on medium, 3 on large
+                }
+                pricingContainer.className = gridClasses;
+
+
+                // Render pricing cards
+                skyProducts.forEach(product => {
+                    const card = document.createElement('div');
+                    // Changed card class to be more rectangular with rounded-xl, removed max-w-sm
+                    card.className = 'card flex flex-col items-start p-8 rounded-xl'; 
+                    card.innerHTML = `
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">${product.name}</h2>
+                        <p class="text-4xl font-extrabold text-gray-900 mb-6">$${product.price.toFixed(2)}/mo</p>
+                        <p class="text-gray-600 mb-8">${product.description}</p>
+                        <button class="bg-black text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center space-x-2 animated-item btn-subscribe w-full open-whatsapp-dialog-btn" data-delay="0.3s"
+                                data-plan-name="${product.name}"
+                                data-plan-type="${product.type}"
+                                data-plan-price="${product.price.toFixed(2)}"
+                                data-plan-duration="${product.subscription_days ? product.subscription_days + ' days' : 'N/A'}">
+                            Subscribe
+                        </button>
+                        <div class="mt-6 w-full">
+                            <div class="feature-item">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Unlimited AI responses</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Unlimited access to latest models</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Priority support</span>
+                            </div>
+                           
+                        </div>
+                    `;
+                    pricingContainer.appendChild(card);
+                });
+
+                // Event delegation for "Get Sky" buttons
+                pricingContainer.addEventListener('click', (event) => {
+                    const targetButton = event.target.closest('.open-whatsapp-dialog-btn');
+                    if (targetButton) {
+                        const planName = targetButton.dataset.planName;
+                        const planType = targetButton.dataset.planType;
+                        const planPrice = targetButton.dataset.planPrice;
+                        const planDuration = targetButton.dataset.planDuration;
+
+                        // Clear previous user details
+                        userDetailsInput.value = '';
+
+                        // Construct the base WhatsApp message
+                        let whatsappMessage = `Hello, I would like to purchase the following plan:\n\n`;
+                        whatsappMessage += `Plan: ${planName}\n`;
+                        whatsappMessage += `Type: ${planType}\n`;
+                        whatsappMessage += `Price: BZD $${planPrice}\n`;
+                        whatsappMessage += `Duration: ${planDuration}\n\n`;
+                        whatsappMessage += `My details:\n[Please enter your name and any relevant info here]`;
+
+                        // Store the message for when the user clicks the WhatsApp button inside the dialog
+                        whatsappLinkBtn.dataset.baseMessage = whatsappMessage;
+
+                        whatsappDialog.showModal();
+                    }
+                });
+
+                // Event listener for the "Continue to WhatsApp" button inside the dialog
+                whatsappLinkBtn.addEventListener('click', () => {
+                    const baseMessage = whatsappLinkBtn.dataset.baseMessage;
+                    const userDetails = userDetailsInput.value.trim();
+                    let finalMessage = baseMessage;
+
+                    if (userDetails) {
+                        // Replace the placeholder with actual user details
+                        finalMessage = baseMessage.replace('[Please enter your name and any relevant info here]', userDetails);
+                    }
+
+                    const encodedMessage = encodeURIComponent(finalMessage);
+                    const whatsappUrl = `https://api.whatsapp.com/send/?phone=5016332826&text=${encodedMessage}&type=phone_number&app_absent=1`;
+                    whatsappLinkBtn.href = whatsappUrl;
+                    
+                    // The target="_blank" will open it in a new tab, so no need to close dialog immediately
+                    // whatsappDialog.close(); // You might want to close it after the link is clicked
+                });
+
+
+                // Close dialog button
+                closeDialogBtn.addEventListener('click', () => {
+                    whatsappDialog.close();
+                });
+
+            } catch (error) {
+                console.error('Error fetching pricing data:', error);
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+                errorMessage.classList.remove('hidden');
+            }
+        });
+
+        // Navbar visibility script
+        const navbar = document.getElementById('main-navbar');
+        let lastScrollY = window.scrollY;
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > lastScrollY && window.scrollY > 50) {
+                navbar.classList.remove('navbar-visible');
+                navbar.classList.add('navbar-hidden');
+            } else {
+                navbar.classList.remove('navbar-hidden');
+                navbar.classList.add('navbar-visible');
+            }
+            lastScrollY = window.scrollY;
+        });
+    </script>
+</body>
+</html>
