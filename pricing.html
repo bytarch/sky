@@ -286,12 +286,20 @@
 
                 // Render pricing cards
                 skyProducts.forEach(product => {
+                    // Determine the price suffix based on subscription_days
+                    let priceSuffix = '/mo'; // Default to /mo
+                    if (product.subscription_days === 7) {
+                        priceSuffix = '/weekly';
+                    } else if (product.subscription_days === 30) {
+                        priceSuffix = '/mo';
+                    }
+
                     const card = document.createElement('div');
                     // Changed card class to be more rectangular with rounded-xl, removed max-w-sm
                     card.className = 'card flex flex-col items-start p-8 rounded-xl'; 
                     card.innerHTML = `
                         <h2 class="text-3xl font-bold text-gray-900 mb-2">${product.name}</h2>
-                        <p class="text-4xl font-extrabold text-gray-900 mb-6">$${product.price.toFixed(2)}/mo</p>
+                        <p class="text-4xl font-extrabold text-gray-900 mb-6">$${product.price.toFixed(2)}${priceSuffix}</p>
                         <p class="text-gray-600 mb-8">${product.description}</p>
                         <button class="bg-black text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center space-x-2 animated-item btn-subscribe w-full open-whatsapp-dialog-btn" data-delay="0.3s"
                                 data-plan-name="${product.name}"
